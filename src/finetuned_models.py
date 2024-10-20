@@ -1,19 +1,15 @@
 import torch
-from huggingface_hub import login
 from transformers import AutoModelForSequenceClassification, BertTokenizer
 
-login(token="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")
-
-
-def pull_model_from_huggingface(essay_set):
-    model_id = f"elisaklunder/finetuned_bert_for_asap_sas_essayset_{essay_set}"
-    model = AutoModelForSequenceClassification.from_pretrained(model_id)
-    return model
-
-
 def score_essay(essay_text, essay_set):
-    model_id = f"elisaklunder/finetuned_bert_for_asap_sas_essayset_{essay_set}"
-    model = AutoModelForSequenceClassification.from_pretrained(model_id)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    best_model_path = f"best_models/best_model_{essay_set}/"
+    model = AutoModelForSequenceClassification.from_pretrained(best_model_path)
+    
+    model.eval()
+    model.to(device)
+
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
     inputs = tokenizer(
@@ -23,12 +19,12 @@ def score_essay(essay_text, essay_set):
         padding="max_length",
         max_length=512,
     )
+    
+    inputs = {key: value.to(device) for key, value in inputs.items()}
 
     with torch.no_grad():
         outputs = model(**inputs)
 
     logits = outputs.logits
     predicted_score = torch.argmax(logits, dim=-1).item()
-
-    print(f"Predicted score for the essay: {predicted_score}")
     return predicted_score

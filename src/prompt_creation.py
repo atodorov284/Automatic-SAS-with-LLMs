@@ -1,3 +1,4 @@
+from read_data import get_num_labels
 
 class CreatePrompt:
     def __init__(self):
@@ -58,5 +59,9 @@ Use results from the experiment to support your description.'
 
     def get_prompt(self, essay_set, final_score, readability, ttr, student_answer):
         questions = self._questions
-        prompt = f'Pretend you are a teacher, having to grade students’ answers on a particular topic thoroughly, clearly, and objectively. This is the question being asked: {questions[essay_set]}. Considering that the final score obtained was {final_score}, the easy of readability scored at {readability}, and the text to token ratio was {ttr}, provide detailed feedback and key areas for improvement. This is the answer provided by the student: {student_answer}'
+        prompt = f"Pretend you are a teacher, having to grade students’ answers on a particular topic thoroughly, clearly, and objectively. This is the question being asked: {questions[essay_set]}. Consider that the final score obtained was {final_score}/{get_num_labels(essay_set)}. Give to the student this objective general score first. Then consider that the easy of readability was scored at {readability}/100, and the text to token ratio was {ttr}/1, which indicates the lexial diversity in the answer. Provide a general feedback about the answer and then three bullet points wih specific feedback about: \
+        - readability of the answer \
+        - lexical diversity of the answer \
+        - anything else you notice not being correct in the answer \
+This is the answer provided by the student: {student_answer}"
         return prompt
