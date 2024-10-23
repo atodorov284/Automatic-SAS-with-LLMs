@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/User/Documents/Uni%20Stuff/Bachelor/LLMs/Automatic-SAS-with-LLMs/mlruns/0/42fc63286cdf4b0bb68588ec6ade4587/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 42fc63286cdf4b0bb68588ec6ade4587
+run_name: ./results/bert-base-uncased
+run_uuid: 42fc63286cdf4b0bb68588ec6ade4587
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1729631533375
+status: 1
+tags: []
+user_id: User
