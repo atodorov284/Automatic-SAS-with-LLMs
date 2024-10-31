@@ -1,8 +1,8 @@
 import numpy as np
 
-'''
+"""
 This file contains functions to calculate the quadratic weighted kappa value.
-The code was taken from the following link:'''
+The code was taken from the following link:"""
 
 
 def confusion_matrix(
@@ -13,7 +13,7 @@ def confusion_matrix(
 ) -> list[list[int]]:
     """
     Returns a confusion matrix for two raters.
-    
+
     Parameters
     ----------
     rater_a : list[int]
@@ -24,7 +24,7 @@ def confusion_matrix(
         the minimum possible rating (default is the minimum of the given ratings)
     max_rating : int, optional
         the maximum possible rating (default is the maximum of the given ratings)
-    
+
     Returns
     -------
     conf_mat : list[list[int]]
@@ -43,7 +43,9 @@ def confusion_matrix(
     return conf_mat
 
 
-def histogram(ratings: list[int], min_rating: int = None, max_rating: int = None) -> list[int]:
+def histogram(
+    ratings: list[int], min_rating: int = None, max_rating: int = None
+) -> list[int]:
     """
     Returns the counts of each type of rating that exists in the given
     ratings, with the given min_rating and max_rating.
@@ -59,7 +61,12 @@ def histogram(ratings: list[int], min_rating: int = None, max_rating: int = None
     return hist_ratings
 
 
-def quadratic_weighted_kappa(rater_a, rater_b, min_rating=None, max_rating=None) -> float:
+def quadratic_weighted_kappa(
+    rater_a: list[int],
+    rater_b: list[int],
+    min_rating: int = None,
+    max_rating: int = None,
+) -> float:
     """
     Calculates the quadratic weighted kappa
     quadratic_weighted_kappa calculates the quadratic weighted kappa
