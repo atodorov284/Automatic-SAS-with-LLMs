@@ -1,7 +1,5 @@
-import pandas as pd
-from datasets import Dataset
-import numpy as np
-from datasets import load_from_disk
+import torch
+from peft import get_peft_model, LoraConfig, TaskType, PeftModel
 from transformers import (
     BertForSequenceClassification,
     BertTokenizer,
@@ -11,18 +9,31 @@ from transformers import (
     AutoModelForSequenceClassification,
 )
 
-from qwk import quadratic_weighted_kappa
-
-import os
-import torch
-from score_essays import score_essay
-from copy import deepcopy
-
 from tqdm.notebook import tqdm
+
 tqdm.pandas()
 
+
 class BertScoringModel:
-    def __init__(self, num_labels=4):
+    """
+    Class to encapsulate the BERT model, tokenizer, and all operations related to
+    tokenization, training, evaluation, and prediction.
+
+    """
+
+    def __init__(self, num_labels: int) -> None:
+        """
+        Class to encapsulate the BERT model, tokenizer, and all operations related to
+        tokenization, training, evaluation, and prediction.
+
+        Attributes:
+            _model_name (str): The name of the BERT model.
+            _tokenizer (BertTokenizer): The BERT tokenizer.
+            _model (BertForSequenceClassification): The BERT model.
+            _padding (str): The padding strategy.
+            _device (torch.device): The device to be used for training.
+        """
+
         self._model_name = "bert-base-uncased"
         self._tokenizer = BertTokenizer.from_pretrained(self._model_name)
         self._model = BertForSequenceClassification.from_pretrained(
@@ -30,33 +41,77 @@ class BertScoringModel:
         )
 
         self._padding = "max_length"
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._model.to(self._device)
 
-    def tokenize_function(self, sample):
+    def tokenize_function(self, sample: dict) -> dict:
+        """
+        Tokenize a given sample using the BERT tokenizer.
+
+        Args:
+            sample (dict): The sample to be tokenized.
+
+        Returns:
+            dict: The tokenized sample.
+        """
         inputs = sample["EssayText"]
         model_inputs = self._tokenizer(inputs, padding=self._padding, truncation=True)
         model_inputs["labels"] = [int(label) for label in sample["Score1"]]
         return model_inputs
 
-    def get_tokenized_dataset(self, dataset, is_train, essay_set, batch_size=8):
-        dataset_type = "train" if is_train else "test"
-        tokenized_path = (
-            f"data/tokenized_data/tokenized_set{int(essay_set)}_{dataset_type}"
-        )
-        if os.path.exists(tokenized_path):
-            print(f"Loading tokenized dataset from {tokenized_path}")
-            return load_from_disk(tokenized_path)
-        else:
-            print(f"Tokenizing and saving dataset to {tokenized_path}")
-            tokenized_dataset = dataset.map(
-                self.tokenize_function,
-                batched=True,
-                batch_size=batch_size,
-                remove_columns=["EssaySet", "Id"],
-            )
-            tokenized_dataset.save_to_disk(tokenized_path)
-            return tokenized_dataset
+    def get_tokenized_dataset(
+        self, dataset: torch.utils.data.Dataset, batch_size: int = 8
+    ) -> torch.utils.data.Dataset:
+        """
+        Tokenize a given dataset using the BERT tokenizer.
 
-    def train(self, train_dataset, eval_dataset, essay_set,  batch_size=8, epochs=10, patience=2,):
+        Args:
+            dataset (torch.utils.data.Dataset): The dataset to be tokenized.
+            batch_size (int, optional): The batch size to use. Defaults to 8.
+
+        Returns:
+            torch.utils.data.Dataset: The tokenized dataset.
+        """
+        tokenized_dataset = dataset.map(
+            self.tokenize_function,
+            batched=True,
+            batch_size=batch_size,
+            remove_columns=["EssaySet", "Id"],
+        )
+        return tokenized_dataset
+
+    def train(
+        self,
+        train_dataset: torch.utils.data.Dataset,
+        eval_dataset: torch.utils.data.Dataset,
+        save_name: str,
+        batch_size: int = 8,
+        epochs: int = 10,
+        patience: int = 2,
+        use_lora: bool = False,
+    ) -> dict:
+        """
+        Train the BERT model on a given dataset.
+
+        Args:
+            train_dataset (torch.utils.data.Dataset): The training dataset.
+            eval_dataset (torch.utils.data.Dataset): The evaluation dataset.
+            save_name (str): The name to save the model with.
+            batch_size (int, optional): The batch size to use. Defaults to 8.
+            epochs (int, optional): The number of epochs to train for. Defaults to 10.
+            patience (int, optional): The patience for early stopping. Defaults to 2.
+            use_lora (bool, optional): Whether to use LoRA. Defaults to False.
+        """
+        if use_lora:
+            lora_config = LoraConfig(
+                task_type=TaskType.SEQ_CLS,
+                r=16,
+                lora_alpha=16,
+                target_modules=["query", "value"],
+                lora_dropout=0.1,
+            )
+            self._model = get_peft_model(self._model, lora_config)
+
         training_args = TrainingArguments(
             output_dir=f"./results/{self._model_name}",
             num_train_epochs=epochs,
@@ -71,7 +126,7 @@ class BertScoringModel:
             load_best_model_at_end=True,
             metric_for_best_model="eval_loss",
             greater_is_better=False,
-            remove_unused_columns=True
+            remove_unused_columns=True,
         )
         trainer = Trainer(
             model=self._model,
@@ -81,7 +136,56 @@ class BertScoringModel:
             callbacks=[EarlyStoppingCallback(early_stopping_patience=patience)],
         )
         trainer.train()
-        best_model_dir = f"best_models/{self._model_name}_set{essay_set}/"
+        best_model_dir = f"best_models/{self._model_name}_{save_name}/"
         trainer.save_model(output_dir=best_model_dir)
         print(f"Model saved at directory {best_model_dir}")
         return trainer.evaluate()
+
+    def score_single_essay(self, essay_text: str) -> int:
+        """
+        Score a single essay.
+
+        Args:
+            essay_text (str): The essay text.
+
+        Returns:
+            int: The predicted score.
+        """
+        self._model.eval()
+        inputs = self._tokenizer(
+            essay_text,
+            return_tensors="pt",
+            truncation=True,
+            padding="max_length",
+        )
+        inputs = {key: value.to(self._device) for key, value in inputs.items()}
+
+        with torch.no_grad():
+            outputs = self._model(**inputs)
+
+        logits = outputs.logits
+        predicted_score = torch.argmax(logits, dim=-1).item()
+        return predicted_score
+
+    def load_trained(self, path: str, num_labels: int, use_lora: bool = False) -> None:
+        """
+        Load a trained BERT model.
+
+        Args:
+            path (str): The path to the trained model.
+            num_labels (int): The number of labels.
+            use_lora (bool, optional): Whether to use LoRA. Defaults to False.
+        """
+        self._model = AutoModelForSequenceClassification.from_pretrained(
+            path, num_labels=num_labels
+        )
+        if use_lora:
+            lora_config = LoraConfig(
+                task_type=TaskType.SEQ_CLS,
+                r=16,
+                lora_alpha=16,
+                target_modules=["query", "value"],
+                lora_dropout=0.1,
+            )
+            self._model = PeftModel(self._model, lora_config)
+        self._model.to(self._device)
