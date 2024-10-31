@@ -50,27 +50,30 @@ It contains the execution of all experiments of the study, along with the config
 
 ## 📂 File Descriptions
 
-- bert_scoring_model.py
+- `bert_scoring_model.py`
+  
     Contains the core implementation of the BERT-based model used for scoring short answers. It is a wrapper class for the BERT uncased model from `HuggingFace`. It includes methods for:
     - Loading pre-trained BERT models from transformers.
     - Fine-tuning for short answer scoring.
     - Model evaluation using metrics.
     - Loading already saved models, fine-tuned in this study.
 
-- experiment_runner.py
+- `experiment_runner.py`
+  
     Manages the experiment workflow, integrating the BERT scoring model with various configurations and running tasks such as:
     - Full fine-tuning of the BERT uncased model.
     - LoRA (Low-Rank Adaptation) configurations for sequence classification.
     - Logging and saving experiment results.
 
-- qwk.py
+- `qwk.py`
+  
     This script contains the logic for computing the Quadratic Weighted Kappa score, taken by the code provided by the Hewlett Foundation.
     - To get the QWK score between two list of graders, you can call:
 
     `quadratic_weighted_kappa(rater_a: list[int], rater_b: list[int], min_rating: int = None, max_rating: int = None)`
-
-
-- short_answer_grading.ipynb
+  
+- `short_answer_grading.ipynb`
+  
     The main point of entry for this project, as it contains the conducting of experiments.. Key sections include:
     - Data exploration.
     - Augmenting prompts to include instructions (instruction-engineering).
@@ -80,8 +83,25 @@ It contains the execution of all experiments of the study, along with the config
 > [!NOTE]
 > The notebook has extensive documentation in markdown and a step-by-step walkthrough for reproducibility.
 
-- requirements.txt
+- `requirements.txt`
+  
     - Lists the dependencies required to run the project.
+ 
+- `results`
+  
+  - Logs from the fine-tuning process of the models.
+ 
+- `mlruns`
+  
+  - Automatic experiment tracking, provided by HuggingFace and PyTorch. Does not contain human-interpretable information and is created automatically.
+ 
+- `data`
+  
+  - The data from the Hewlett Foundation, used to fine-tune and evaluate the models.
+ 
+- `best_models`
+  
+  - The stored, already fine-tuned models from this research. Automatically loaded whenever `evaluate=True` in an experiment runner class.
 
 ## 💡 Tips & Notes
 - Make sure to activate the virtual environment each time you start a new session.
