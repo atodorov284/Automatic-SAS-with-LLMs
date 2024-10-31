@@ -44,8 +44,8 @@ It contains the execution of all experiments of the study, along with the config
     jupyter notebook
 2. **Open `short_answer_grading.ipynb` and run the cells to execute the experiments.**
     This notebook provides step-by-step explanations for training and evaluating the model on short answer grading.
-    > [!NOTE]
-    > Some of the cells are commented, as they contain the training process and results, so it is easy to missclick them and rerun the whole training again. Uncomment them if you want to retrain or re-evaluate the models, by using the specified arguments (described further down).
+> [!NOTE]
+> Some of the cells are commented, as they contain the training process and results, so it is easy to missclick them and rerun the whole training again. Uncomment them if you want to retrain or re-evaluate the models, by using the specified arguments (described further down).
 
 
 ## 📂 File Descriptions
