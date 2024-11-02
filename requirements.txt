@@ -1,8 +1,13 @@
 ipykernel
-scikit-learn
 numpy
 transformers
 torch
 datasets
 accelerate>=0.26.0
 textstat
+transformers[torch]   
+pandas  
+scikit-learn
+tqdm 
+peft  
+matplotlib 
