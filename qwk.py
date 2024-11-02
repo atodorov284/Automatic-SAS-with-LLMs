@@ -2,7 +2,9 @@ import numpy as np
 
 """
 This file contains functions to calculate the quadratic weighted kappa value.
-The code was taken from the following link:"""
+The code was taken from the following link:
+https://github.com/benhamner/Metrics/blob/master/Python/ml_metrics/quadratic_weighted_kappa.py
+"""
 
 
 def confusion_matrix(

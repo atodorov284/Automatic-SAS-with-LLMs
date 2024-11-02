@@ -103,6 +103,14 @@ It contains the execution of all experiments of the study, along with the config
   
   - The stored, already fine-tuned models from this research. Automatically loaded whenever `evaluate=True` in an experiment runner class.
 
+> [!NOTE]
+> This directory could not be uploaded to GitHub due to its large size. The best models could be downloaded from this link: 
+> [BestModels](https://drive.google.com/file/d/18ZV3bnS2KZbzPba84ie8sJxVzid_FFsz/view?usp=sharing). 
+> Do not click on links randomly! Always make sure to run your antivirus when downloading files.
+> If you download this file, place the whole directory `best_models` in this repository.
+> Otherwise, it is possible to retrain using `retrain=True` in the experiment setups, or simply observe the results from the already saved notebook.
+
+
 ## 💡 Tips & Notes
 - Make sure to activate the virtual environment each time you start a new session.
 - Set `retrain=False` in order to avoid unnecessary retraining of the models. If you only wish to evaluate and get the scored from the saved models, set `evaluate=True`.
